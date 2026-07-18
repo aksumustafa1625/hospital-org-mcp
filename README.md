@@ -107,6 +107,17 @@ Apex tests are free — they spend no Flex Credits.
 
 ---
 
+## Documentation
+
+| Document | What it answers |
+|---|---|
+| [ARCHITECTURE.md](ARCHITECTURE.md) | Source layout + the six rules that shaped it |
+| [docs/adr/](docs/adr/) | **6 Architecture Decision Records** — the loop design as explicit decisions: verifier over self-assessment, six narrow tools, tested hands, dependency order, archive-the-retrieved-source, the trigger framework |
+| [docs/architecture/](docs/architecture/) | Mermaid views: context, container, the loop as a sequence (with its two teachable failures), and the measured 7-object lookup graph |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | The standing rule: loop-first, retrieve-after — why hand-editing `force-app/` would destroy the exhibit |
+| [SECURITY.md](SECURITY.md) | What it means to give an agent deployment power, and how it was bounded |
+| [CLAUDE.md](CLAUDE.md) | Working context for the next session (human or AI) |
+
 ## Related projects
 
 - **[Prüfstand](https://mustafaaksu.dev/en/projects/pruefstand)** — the test bench that

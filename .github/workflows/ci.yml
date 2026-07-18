@@ -1,0 +1,68 @@
+# CI for an org-source archive: verify only what can be verified honestly
+# without an org.
+#
+# Deliberate boundaries:
+# - XML well-formedness is a HARD gate - a corrupted exhibit is worse than
+#   none, and retrieved metadata should never be edited by hand anyway
+#   (ADR-005), so any parse failure means something went wrong mechanically.
+# - PMD runs in warm-up mode (|| true): the Apex here is agent-written and
+#   its rawness is part of the exhibit. Findings are informative; gating on
+#   them would pressure exactly the hand-polishing this repo forbids.
+# - NO scratch-org deploy job: the repo's claims are about a recorded build.
+#   Reproduction is a documented one-liner (see CONTRIBUTING.md) any
+#   reviewer can run against their own org.
+name: CI
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify-archive:
+    name: Archive integrity + static analysis
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: XML well-formedness (hard gate)
+        run: |
+          sudo apt-get install -y --no-install-recommends libxml2-utils
+          find force-app manifest -name "*.xml" -print0 \
+            | xargs -0 -n 50 xmllint --noout
+          echo "all retrieved metadata parses"
+
+      - name: Set up Java (PMD requires JRE 11+)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Cache PMD
+        id: cache-pmd
+        uses: actions/cache@v4
+        with:
+          path: pmd
+          key: pmd-7.7.0
+
+      - name: Install PMD 7.7.0
+        if: steps.cache-pmd.outputs.cache-hit != 'true'
+        run: |
+          curl -sSL "https://github.com/pmd/pmd/releases/download/pmd_releases%2F7.7.0/pmd-dist-7.7.0-bin.zip" -o pmd.zip
+          unzip -q pmd.zip
+          mv pmd-bin-* pmd
+
+      - name: PMD on the agent-written Apex (informative, non-gating)
+        run: |
+          ./pmd/bin/pmd check \
+            --dir force-app/main/default/classes \
+            --dir force-app/main/default/triggers \
+            --rulesets rulesets/apex/quickstart.xml \
+            --format text \
+            --threads 4 || true
